@@ -123,18 +123,25 @@ main:
     mov edx, 4
     int 80h
 
-    ; Ler 4 bytes referentes à largura da imagem
-    mov eax, 3
-    mov ebx, [file_handle]
-    mov ecx, [width]
-    mov edx, 4
-    int 80h
-
     ; Escrever os 4 bytes no arquivo de saída
     mov eax, 4
     mov ebx, [file_handle]
     mov ecx, [output_file]
     mov edx, 4
+    int 80h
+
+    ; Ler os 32 bytes restantes do cabeçalho da imagem
+    mov eax, 3
+    mov ebx, [file_handle]
+    mov ecx, buffer
+    mov edx, 32
+    int 80h
+
+    ; Escrever os 32 bytes no arquivo de saída
+    mov eax, 4
+    mov ebx, [file_handle]
+    mov ecx, buffer
+    mov edx, 32
     int 80h
 
     abrir_2: ;arquivo 2
