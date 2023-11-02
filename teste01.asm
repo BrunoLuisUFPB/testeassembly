@@ -104,6 +104,39 @@ main:
     mov edx, 54
     int 80h
 
+    ; Ler e escrever os primeiros 18 bytes (14 + 4) do arquivo
+    mov eax, 3
+    mov ebx, [file_handle]
+    mov ecx, buffer
+    mov edx, 18
+    int 80h
+    mov eax, 4
+    mov ebx, [file_handle]
+    mov ecx, buffer
+    mov edx, 18
+    int 80h
+
+    ; Ler 4 bytes referentes à largura da imagem
+    mov eax, 3
+    mov ebx, [file_handle]
+    mov ecx, [width]
+    mov edx, 4
+    int 80h
+
+    ; Ler 4 bytes referentes à largura da imagem
+    mov eax, 3
+    mov ebx, [file_handle]
+    mov ecx, [width]
+    mov edx, 4
+    int 80h
+
+    ; Escrever os 4 bytes no arquivo de saída
+    mov eax, 4
+    mov ebx, [file_handle]
+    mov ecx, [output_file]
+    mov edx, 4
+    int 80h
+
     abrir_2: ;arquivo 2
     ; Escrever os primeiros 54 bytes no arquivo de saída
     mov eax, 5 ; Abrir arquivo de saída
@@ -119,21 +152,35 @@ main:
     mov edx, 54
     int 80h
 
+    ; Ler os 32 bytes restantes do cabeçalho da imagem
+    mov eax, 3
+    mov ebx, [file_handle]
+    mov ecx, buffer
+    mov edx, 32
+    int 80h
+
     censura:
     mov eax, 3 ; Ler arquivo de entrada
     mov ebx, [fileHandle]
     mov ecx, fileBuffer
     mov edx, 3  ; Largura de 3 bytes por pixel
     int 80h
+
+    ; Escrever os 32 bytes no arquivo de saída
+    mov eax, 4
+    mov ebx, [file_handle]
+    mov ecx, buffer
+    mov edx, 32
+    int 80h
  
     mov ebx, fileBuffer  ; ebx aponta para os bytes da imagem
     mov edx, [integer_x]  ; Coordenada X inicial
     mov esi, [integer_y]  ; Coordenada Y inicial
     mov edi, [integer_width]  ; Largura da censura
-    mov ebp, [integer_height]
+    mov ebp, [integer_height] ; Altura da censura
  
             
-;censurando linha por linha
+    ;censurando linha por linha
     linha_loop:
     mov eax, 3
     mov ebx, [fileHandle]
