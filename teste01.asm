@@ -16,6 +16,7 @@ format_num db "%d",0H
 section .bss
 fileHandle resd 1 ; Handle do arquivo
 fileBuffer resb 54 ; Buffer para os primeiros 54 bytes do arquivo
+buffer resb 6480
 integer_x resd 1 
 integer_y resd 1
 integer_width resd 1
