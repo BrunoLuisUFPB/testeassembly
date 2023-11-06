@@ -1,33 +1,31 @@
-;include 'bibliotecaE.inc' // USEI MAIS COMO REFERENCIA DO QUE COLOCAR NOS REGISTRADORES
+section .data
+    request_filename_end db "Nome do arquivo de saída: ", 0
+    request_filename db "Nome do arquivo de entrada: ", 0
+    request_x db "Coordenada X: ", 0
+    request_y db "Coordenada Y: ", 0
+    request_width db "Largura do retângulo: ", 0
+    request_height db "Altura do retângulo: ", 0
+    format_string db "%s",0
+    format_num db "%d",0
 
+section .bss
+    fileHandleIn resd 1 ; Handle do arquivo de entrada
+    fileHandleOut resd 1 ; Handle do arquivo de saída
+    fileBuffer resb 54 ; Buffer para os primeiros 54 bytes do arquivo
+    buffer resb 6480
+    integer_x resd 1 
+    integer_y resd 1
+    integer_width resd 1
+    integer_height resd 1
+    filename_in resb 300
+    filename_out resb 300
+
+section .text
 extern printf, scanf
 global main
 
-section .data
-request_filename_end db "nome do arquivo de saída:  ", 0AH, 0H
-request_filename db "nome do arquivo de entrada:  ", 0AH,0H
-request_x db "coordenada x:  ", 0AH,0H
-request_y db "coordenada y:  ", 0AH,0H
-request_width db "largura do retângulo:  ", 0AH,0H
-request_height db "altura do retângulo:  ", 0AH,0H
-format_string db "%s",0H
-format_num db "%d",0H
-
-section .bss
-fileHandle resd 1 ; Handle do arquivo
-fileBuffer resb 54 ; Buffer para os primeiros 54 bytes do arquivo
-buffer resb 6480
-integer_x resd 1 
-integer_y resd 1
-integer_width resd 1
-integer_height resd 1
-filename_in resb 300
-filename_out resb 300 
-
-section .text 
 main:
-    ; Passo 1: perguntar as coisas
-    pergunta1:
+    ; Passo 1: perguntar as informações
     push request_filename
     call printf
     add esp, 4
@@ -37,7 +35,6 @@ main:
     call scanf
     add esp, 8
 
-    perguntaX:
     push request_x
     call printf
     add esp, 4
@@ -47,7 +44,6 @@ main:
     call scanf
     add esp, 8
 
-    perguntaY:
     push request_y
     call printf
     add esp, 4
@@ -57,7 +53,6 @@ main:
     call scanf
     add esp, 8
 
-    perguntaWidth:
     push request_width
     call printf
     add esp, 4
@@ -66,8 +61,7 @@ main:
     push format_num
     call scanf
     add esp, 8
- 
-    perguntaHeight:
+
     push request_height
     call printf
     add esp, 4
@@ -77,7 +71,14 @@ main:
     call scanf
     add esp, 8
 
-    PerguntaNovoArquivo:
+    ; Passo 2: Abertura do Arquivo de Entrada
+    mov eax, 5 ; Abrir arquivo de entrada
+    mov ebx, filename_in
+    mov ecx, 0 ; Modo de leitura
+    int 0x80
+    mov dword [fileHandleIn], eax
+
+    ; Passo 3: Abertura do Arquivo de Saída
     push request_filename_end
     call printf
     add esp, 4
@@ -87,141 +88,56 @@ main:
     call scanf
     add esp, 8
 
+    mov eax, 8 ; Abrir arquivo de saída
+    mov ebx, filename_out
+    mov ecx, 0o777 ; Modo de escrita
+    int 0x80
+    mov dword [fileHandleOut], eax
 
-    ; Passo 2: Abertura do Arquivo 1 e 2
-    abrir_1:
-    mov eax, 5 ; Abrir arquivo
-    mov ebx, filename_in
-    mov ecx, 0 ; Modo de leitura
-    mov edx, 0o777
-    int 80h
-    mov [fileHandle], eax
-
-    ; Ler os primeiros 54 bytes do arquivo
-    mov eax, 3 ; Ler arquivo
-    mov ebx, [fileHandle]
+    ; Passo 4: Ler os primeiros 54 bytes do arquivo de entrada (cabeçalho)
+    mov eax, 3 ; Ler arquivo de entrada
+    mov ebx, dword [fileHandleIn]
     mov ecx, fileBuffer
     mov edx, 54
-    int 80h
+    int 0x80
 
-    ; Ler e escrever os primeiros 18 bytes (14 + 4) do arquivo
-    mov eax, 3
-    mov ebx, [file_handle]
+    ; Passo 5: Escrever os primeiros 54 bytes no arquivo de saída
+    mov eax, 4 ; Escrever no arquivo de saída
+    mov ebx, dword [fileHandleOut]
+    mov ecx, fileBuffer
+    mov edx, 54
+    int 0x80
+
+    ; Passo 6: Ler o restante dos dados do arquivo de entrada e escrever no arquivo de saída
+    copiar_dados:
+    mov eax, 3 ; Ler arquivo de entrada
+    mov ebx, dword [fileHandleIn]
     mov ecx, buffer
-    mov edx, 18
-    int 80h
-    mov eax, 4
-    mov ebx, [file_handle]
-    mov ecx, buffer
-    mov edx, 18
-    int 80h
+    mov edx, 6480
+    int 0x80
 
-    ; Ler 4 bytes referentes à largura da imagem
-    mov eax, 3
-    mov ebx, [file_handle]
-    mov ecx, [width]
-    mov edx, 4
-    int 80h
-
-    ; Escrever os 4 bytes no arquivo de saída
-    mov eax, 4
-    mov ebx, [file_handle]
-    mov ecx, [output_file]
-    mov edx, 4
-    int 80h
-
-    ; Ler os 32 bytes restantes do cabeçalho da imagem
-    mov eax, 3
-    mov ebx, [file_handle]
-    mov ecx, buffer
-    mov edx, 32
-    int 80h
-
-    ; Escrever os 32 bytes no arquivo de saída
-    mov eax, 4
-    mov ebx, [file_handle]
-    mov ecx, buffer
-    mov edx, 32
-    int 80h
-
-    abrir_2: ;arquivo 2
-    ; Escrever os primeiros 54 bytes no arquivo de saída
-    mov eax, 5 ; Abrir arquivo de saída
-    mov ebx, filename_out
-    mov ecx, 1 ; Modo de escrita
-    mov edx, 0o777
-    int 80h
-    mov [fileHandle], eax
+    test eax, eax ; Verifique se chegamos ao final do arquivo
+    jz fechar_arquivos ; Se sim, vá para o próximo passo
 
     mov eax, 4 ; Escrever no arquivo de saída
-    mov ebx, [fileHandle]
-    mov ecx, fileBuffer
-    mov edx, 54
-    int 80h
-
-    ; Ler os 32 bytes restantes do cabeçalho da imagem
-    mov eax, 3
-    mov ebx, [file_handle]
+    mov ebx, dword [fileHandleOut]
     mov ecx, buffer
-    mov edx, 32
-    int 80h
+    int 0x80
 
-    censura:
-    mov eax, 3 ; Ler arquivo de entrada
-    mov ebx, [fileHandle]
-    mov ecx, fileBuffer
-    mov edx, 3  ; Largura de 3 bytes por pixel
-    int 80h
+    jmp copiar_dados ; Continue lendo e escrevendo
 
-    ; Escrever os 32 bytes no arquivo de saída
-    mov eax, 4
-    mov ebx, [file_handle]
-    mov ecx, buffer
-    mov edx, 32
-    int 80h
- 
-    mov ebx, fileBuffer  ; ebx aponta para os bytes da imagem
-    mov edx, [integer_x]  ; Coordenada X inicial
-    mov esi, [integer_y]  ; Coordenada Y inicial
-    mov edi, [integer_width]  ; Largura da censura
-    mov ebp, [integer_height] ; Altura da censura
- 
-            
-    ;censurando linha por linha
-    linha_loop:
-    mov eax, 3
-    mov ebx, [fileHandle]
-    mov ecx, fileBuffer 
+    ; Passo 7: Fechar os arquivos
+    fechar_arquivos:
+    mov eax, 6 ; Fechar o arquivo de entrada
+    mov ebx, dword [fileHandleIn]
+    int 0x80
 
-    mov edx, [integer_width]
-    mov esi, 3
-    mov edi, 0 
-     
-    censurar_linha:
-    mov byte [ecx], 0  ; Censura o componente azul
-    mov byte [ecx + 1], 0  ; Censura o componente verde
-    mov byte [ecx + 2], 0  ; Censura o componente vermelho
-    add ecx, 3  ; Avança para o próximo pixel
-    sub edx, 1  ; Decrementa a largura da censura
-    cmp edx, 0
-    je linha_loop
-    jmp censurar_linha
+    mov eax, 6 ; Fechar o arquivo de saída
+    mov ebx, dword [fileHandleOut]
+    int 0x80
 
-add esi, 1  ; Avança para a próxima linha
-sub ebp, 1  ; Decrementa a altura da censura
-cmp ebp, 0
-je fim
-jmp linha_loop
-
-
-
-fechar_arquivo:
-mov eax, 6
-mov ebx, [fileHandle]
-int 80h
-
-
-fim: 
-mov eax, 1
-xor ebx, ebx
-int 80h
+    ; Passo 8: Sair do programa
+    fim:
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80
