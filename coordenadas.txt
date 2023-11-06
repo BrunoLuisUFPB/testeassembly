@@ -1,0 +1,11 @@
+Suponha agora que um usuário utilizou o seu programa para censurar a possível fonte de mal-entendido.
+Ele executou o programa e informou o nome do arquivo (fotoanonima.bmp)
+
+
+informou o ponto X 250 e o ponto
+Y 310 como coordenadas iniciais (em arquivos BMP as coordenadas crescem da esquerda para a direita, e de
+baixo para cima)
+
+
+e informou a largura 230 e altura 30. O programa deve produzir como resultado a imagem
+abaixo, a qual insere a censura na área indicada e claramente impossibilita a identificação da pessoa fotografada!
