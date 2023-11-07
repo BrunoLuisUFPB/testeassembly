@@ -23,6 +23,7 @@ section .bss
     integer_height resd 1
     filename_in resb 300
     filename_out resb 300
+    imageLine resb 2700 ; Array para armazenar uma linha da imagem
 
 section .text
 extern printf, scanf
@@ -156,12 +157,12 @@ main:
     cmp eax, -1  ; Verificar se houve erro na escrita
     je erro_escrita
 
-    ; Passo 10: Ler o restante dos dados do arquivo de entrada e escrever no arquivo de saída
-    copiar_dados:
+    ; Passo 10: Ler e escrever os dados da imagem
+    copiar_imagem:
     mov eax, 3 ; Ler arquivo de entrada
     mov ebx, dword [fileHandleIn]
-    mov ecx, buffer
-    mov edx, 6480
+    mov ecx, imageLine
+    mov edx, 2700
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na leitura
     je erro_leitura
@@ -171,12 +172,12 @@ main:
 
     mov eax, 4 ; Escrever no arquivo de saída
     mov ebx, dword [fileHandleOut]
-    mov ecx, buffer
+    mov ecx, imageLine
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na escrita
     je erro_escrita
 
-    jmp copiar_dados
+    jmp copiar_imagem
 
     ; Passo 11: Fechar os arquivos
     fechar_arquivos:
