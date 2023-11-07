@@ -5,8 +5,12 @@ section .data
     request_y db "Coordenada Y: ", 0
     request_width db "Largura do retângulo: ", 0
     request_height db "Altura do retângulo: ", 0
-    format_string db "%s",0
-    format_num db "%d",0
+    format_string db "%s", 0
+    format_num db "%d", 0
+    erro_mensagem_input db "Erro na abertura do arquivo de entrada.", 0
+    erro_mensagem_output db "Erro na abertura do arquivo de saída.", 0
+    erro_leitura_msg db "Erro na leitura do arquivo.", 0
+    erro_escrita_msg db "Erro na escrita do arquivo.", 0
 
 section .bss
     fileHandleIn resd 1 ; Handle do arquivo de entrada
@@ -76,6 +80,8 @@ main:
     mov ebx, filename_in
     mov ecx, 0 ; Modo de leitura
     int 0x80
+    cmp eax, -1  ; Verificar se houve erro
+    je erro_abertura_input ; Se sim, vá para o tratamento de erro
     mov dword [fileHandleIn], eax
 
     ; Passo 3: Abertura do Arquivo de Saída
@@ -92,29 +98,55 @@ main:
     mov ebx, filename_out
     mov ecx, 0o777 ; Modo de escrita
     int 0x80
+    cmp eax, -1  ; Verificar se houve erro
+    je erro_abertura_output ; Se sim, vá para o tratamento de erro
     mov dword [fileHandleOut], eax
 
-    ; Passo 4: Ler os primeiros 54 bytes do arquivo de entrada (cabeçalho)
+    ; Passo 4: Ler os primeiros 18 bytes do arquivo de entrada
     mov eax, 3 ; Ler arquivo de entrada
     mov ebx, dword [fileHandleIn]
     mov ecx, fileBuffer
-    mov edx, 54
+    mov edx, 18
     int 0x80
+    cmp eax, -1  ; Verificar se houve erro na leitura
+    je erro_leitura ; Se sim, vá para o tratamento de erro
 
-    ; Passo 5: Escrever os primeiros 54 bytes no arquivo de saída
+    ; Passo 5: Escrever os 18 bytes no arquivo de saída
     mov eax, 4 ; Escrever no arquivo de saída
     mov ebx, dword [fileHandleOut]
     mov ecx, fileBuffer
-    mov edx, 54
+    mov edx, 18
     int 0x80
+    cmp eax, -1  ; Verificar se houve erro na escrita
+    je erro_escrita ; Se sim, vá para o tratamento de erro
 
-    ; Passo 6: Ler o restante dos dados do arquivo de entrada e escrever no arquivo de saída
+    ; Passo 6: Ler 4 bytes referentes ao tamanho da largura da imagem de entrada
+    mov eax, 3 ; Ler arquivo de entrada
+    mov ebx, dword [fileHandleIn]
+    mov ecx, integer_width
+    mov edx, 4
+    int 0x80
+    cmp eax, -1  ; Verificar se houve erro na leitura
+    je erro_leitura ; Se sim, vá para o tratamento de erro
+
+    ; Passo 7: Escrever 4 bytes no arquivo de saída
+    mov eax, 4 ; Escrever no arquivo de saída
+    mov ebx, dword [fileHandleOut]
+    mov ecx, integer_width
+    mov edx, 4
+    int 0x80
+    cmp eax, -1  ; Verificar se houve erro na escrita
+    je erro_escrita ; Se sim, vá para o tratamento de erro
+
+    ; Passo 8: Ler o restante dos dados do arquivo de entrada e escrever no arquivo de saída
     copiar_dados:
     mov eax, 3 ; Ler arquivo de entrada
     mov ebx, dword [fileHandleIn]
     mov ecx, buffer
     mov edx, 6480
     int 0x80
+    cmp eax, -1  ; Verificar se houve erro na leitura
+    je erro_leitura ; Se sim, vá para o tratamento de erro
 
     test eax, eax ; Verifique se chegamos ao final do arquivo
     jz fechar_arquivos ; Se sim, vá para o próximo passo
@@ -123,10 +155,12 @@ main:
     mov ebx, dword [fileHandleOut]
     mov ecx, buffer
     int 0x80
+    cmp eax, -1  ; Verificar se houve erro na escrita
+    je erro_escrita ; Se sim, vá para o tratamento de erro
 
     jmp copiar_dados ; Continue lendo e escrevendo
 
-    ; Passo 7: Fechar os arquivos
+    ; Passo 9: Fechar os arquivos
     fechar_arquivos:
     mov eax, 6 ; Fechar o arquivo de entrada
     mov ebx, dword [fileHandleIn]
@@ -136,8 +170,32 @@ main:
     mov ebx, dword [fileHandleOut]
     int 0x80
 
-    ; Passo 8: Sair do programa
+    ; Passo 10: Sair do programa
     fim:
     mov eax, 1
     xor ebx, ebx
     int 0x80
+
+erro_abertura_input:
+    push erro_mensagem_input
+    call printf
+    add esp, 4
+    jmp fim  ; Sair do programa devido a erro
+
+erro_abertura_output:
+    push erro_mensagem_output
+    call printf
+    add esp, 4
+    jmp fim  ; Sair do programa devido a erro
+
+erro_leitura:
+    push erro_leitura_msg
+    call printf
+    add esp, 4
+    jmp fim  ; Sair do programa devido a erro
+
+erro_escrita:
+    push erro_escrita_msg
+    call printf
+    add esp, 4
+    jmp fim  ; Sair do programa devido a erro
