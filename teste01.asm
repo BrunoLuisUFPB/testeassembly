@@ -81,7 +81,7 @@ main:
     mov ecx, 0 ; Modo de leitura
     int 0x80
     cmp eax, -1  ; Verificar se houve erro
-    je erro_abertura_input ; Se sim, vá para o tratamento de erro
+    je erro_abertura_input
     mov dword [fileHandleIn], eax
 
     ; Passo 3: Abertura do Arquivo de Saída
@@ -99,7 +99,7 @@ main:
     mov ecx, 0o777 ; Modo de escrita
     int 0x80
     cmp eax, -1  ; Verificar se houve erro
-    je erro_abertura_output ; Se sim, vá para o tratamento de erro
+    je erro_abertura_output
     mov dword [fileHandleOut], eax
 
     ; Passo 4: Ler os primeiros 18 bytes do arquivo de entrada
@@ -109,7 +109,7 @@ main:
     mov edx, 18
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na leitura
-    je erro_leitura ; Se sim, vá para o tratamento de erro
+    je erro_leitura
 
     ; Passo 5: Escrever os 18 bytes no arquivo de saída
     mov eax, 4 ; Escrever no arquivo de saída
@@ -118,7 +118,7 @@ main:
     mov edx, 18
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na escrita
-    je erro_escrita ; Se sim, vá para o tratamento de erro
+    je erro_escrita
 
     ; Passo 6: Ler 4 bytes referentes ao tamanho da largura da imagem de entrada
     mov eax, 3 ; Ler arquivo de entrada
@@ -127,7 +127,7 @@ main:
     mov edx, 4
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na leitura
-    je erro_leitura ; Se sim, vá para o tratamento de erro
+    je erro_leitura
 
     ; Passo 7: Escrever 4 bytes no arquivo de saída
     mov eax, 4 ; Escrever no arquivo de saída
@@ -136,9 +136,27 @@ main:
     mov edx, 4
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na escrita
-    je erro_escrita ; Se sim, vá para o tratamento de erro
+    je erro_escrita
 
-    ; Passo 8: Ler o restante dos dados do arquivo de entrada e escrever no arquivo de saída
+    ; Passo 8: Ler os 32 bytes restantes do cabeçalho da imagem
+    mov eax, 3 ; Ler arquivo de entrada
+    mov ebx, dword [fileHandleIn]
+    mov ecx, fileBuffer
+    mov edx, 32
+    int 0x80
+    cmp eax, -1  ; Verificar se houve erro na leitura
+    je erro_leitura
+
+    ; Passo 9: Escrever os 32 bytes no arquivo de saída
+    mov eax, 4 ; Escrever no arquivo de saída
+    mov ebx, dword [fileHandleOut]
+    mov ecx, fileBuffer
+    mov edx, 32
+    int 0x80
+    cmp eax, -1  ; Verificar se houve erro na escrita
+    je erro_escrita
+
+    ; Passo 10: Ler o restante dos dados do arquivo de entrada e escrever no arquivo de saída
     copiar_dados:
     mov eax, 3 ; Ler arquivo de entrada
     mov ebx, dword [fileHandleIn]
@@ -146,21 +164,21 @@ main:
     mov edx, 6480
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na leitura
-    je erro_leitura ; Se sim, vá para o tratamento de erro
+    je erro_leitura
 
     test eax, eax ; Verifique se chegamos ao final do arquivo
-    jz fechar_arquivos ; Se sim, vá para o próximo passo
+    jz fechar_arquivos
 
     mov eax, 4 ; Escrever no arquivo de saída
     mov ebx, dword [fileHandleOut]
     mov ecx, buffer
     int 0x80
     cmp eax, -1  ; Verificar se houve erro na escrita
-    je erro_escrita ; Se sim, vá para o tratamento de erro
+    je erro_escrita
 
-    jmp copiar_dados ; Continue lendo e escrevendo
+    jmp copiar_dados
 
-    ; Passo 9: Fechar os arquivos
+    ; Passo 11: Fechar os arquivos
     fechar_arquivos:
     mov eax, 6 ; Fechar o arquivo de entrada
     mov ebx, dword [fileHandleIn]
@@ -170,7 +188,7 @@ main:
     mov ebx, dword [fileHandleOut]
     int 0x80
 
-    ; Passo 10: Sair do programa
+    ; Passo 12: Sair do programa
     fim:
     mov eax, 1
     xor ebx, ebx
@@ -180,22 +198,22 @@ erro_abertura_input:
     push erro_mensagem_input
     call printf
     add esp, 4
-    jmp fim  ; Sair do programa devido a erro
+    jmp fim
 
 erro_abertura_output:
     push erro_mensagem_output
     call printf
     add esp, 4
-    jmp fim  ; Sair do programa devido a erro
+    jmp fim
 
 erro_leitura:
     push erro_leitura_msg
     call printf
     add esp, 4
-    jmp fim  ; Sair do programa devido a erro
+    jmp fim
 
 erro_escrita:
     push erro_escrita_msg
     call printf
     add esp, 4
-    jmp fim  ; Sair do programa devido a erro
+    jmp fim
