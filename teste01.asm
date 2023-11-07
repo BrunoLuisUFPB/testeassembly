@@ -15,7 +15,7 @@ section .data
 section .bss
     fileHandleIn resd 1 ; Handle do arquivo de entrada
     fileHandleOut resd 1 ; Handle do arquivo de saída
-    fileBuffer resb 54 ; Buffer para os primeiros 54 bytes do arquivo
+    fileBuffer resb 32 ; Buffer para os primeiros 32 bytes do arquivo
     buffer resb 6480
     integer_x resd 1 
     integer_y resd 1
